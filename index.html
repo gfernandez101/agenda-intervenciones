@@ -7,43 +7,24 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #ffffff;
-    --bg2: #f5f5f3;
-    --bg3: #ededea;
-    --text: #1a1a18;
-    --text2: #6b6b67;
-    --text3: #9e9e99;
-    --border: rgba(0,0,0,0.12);
-    --border2: rgba(0,0,0,0.22);
-    --blue-bg: #E6F1FB;
-    --blue-text: #0C447C;
-    --blue: #185FA5;
-    --blue-dark: #0C447C;
-    --amber-bg: #FAEEDA;
-    --amber-text: #854F0B;
-    --green-bg: #EAF3DE;
-    --green-text: #3B6D11;
-    --radius: 8px;
-    --radius-lg: 12px;
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #ededea;
+    --text: #1a1a18; --text2: #6b6b67; --text3: #9e9e99;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
+    --blue-bg: #E6F1FB; --blue-text: #0C447C;
+    --blue: #185FA5; --blue-dark: #0C447C;
+    --amber-bg: #FAEEDA; --amber-text: #854F0B;
+    --green-bg: #EAF3DE; --green-text: #3B6D11;
+    --radius: 8px; --radius-lg: 12px;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #1e1e1c;
-      --bg2: #2a2a28;
-      --bg3: #333330;
-      --text: #f0ede8;
-      --text2: #a8a8a2;
-      --text3: #6b6b65;
-      --border: rgba(255,255,255,0.1);
-      --border2: rgba(255,255,255,0.2);
-      --blue-bg: #0C447C;
-      --blue-text: #B5D4F4;
-      --blue: #378ADD;
-      --blue-dark: #85B7EB;
-      --amber-bg: #633806;
-      --amber-text: #FAC775;
-      --green-bg: #27500A;
-      --green-text: #C0DD97;
+      --bg: #1e1e1c; --bg2: #2a2a28; --bg3: #333330;
+      --text: #f0ede8; --text2: #a8a8a2; --text3: #6b6b65;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.2);
+      --blue-bg: #0C447C; --blue-text: #B5D4F4;
+      --blue: #378ADD; --blue-dark: #85B7EB;
+      --amber-bg: #633806; --amber-text: #FAC775;
+      --green-bg: #27500A; --green-text: #C0DD97;
     }
   }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg2); color: var(--text); min-height: 100vh; }
@@ -56,32 +37,41 @@
   .stat { background: var(--bg); border-radius: var(--radius); padding: 0.85rem 1rem; text-align: center; border: 0.5px solid var(--border); }
   .stat-n { font-size: 26px; font-weight: 600; }
   .stat-l { font-size: 12px; color: var(--text2); margin-top: 3px; }
-  .n-total { color: var(--text); }
-  .n-pend { color: #BA7517; }
-  .n-done { color: #3B6D11; }
-
+  .n-total { color: var(--text); } .n-pend { color: #BA7517; } .n-done { color: #3B6D11; }
   .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
   @media (max-width: 600px) { .layout { grid-template-columns: 1fr; } }
-
   .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
   .sec-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.85rem; }
-
-  /* Form */
   .form-card { margin-bottom: 1rem; }
   .form-row { margin-bottom: 10px; }
   .form-row label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
   .form-row input, .form-row select, .form-row textarea {
     width: 100%; font-size: 14px; padding: 7px 10px;
     border: 0.5px solid var(--border2); border-radius: var(--radius);
-    background: var(--bg2); color: var(--text); outline: none;
-    transition: border-color 0.15s;
+    background: var(--bg2); color: var(--text); outline: none; transition: border-color 0.15s;
   }
   .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: var(--blue); }
   .form-row textarea { height: 60px; resize: vertical; }
   .save-btn { width: 100%; background: var(--blue); color: #E6F1FB; border: none; border-radius: var(--radius); padding: 9px; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 4px; }
   .save-btn:hover { background: var(--blue-dark); }
 
-  /* Calendar */
+  /* Voz */
+  .voice-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .mic-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius);
+    padding: 9px 14px; font-size: 13px; font-weight: 500; color: var(--text2);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .mic-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .mic-btn.listening { background: #FCEBEB; border-color: #E24B4A; color: #A32D2D; animation: pulse 1s infinite; }
+  .mic-icon { width: 16px; height: 16px; border-radius: 50%; background: currentColor; position: relative; flex-shrink: 0; }
+  .mic-icon::after { content: ''; position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 10px; height: 6px; border: 2px solid currentColor; border-top: none; border-radius: 0 0 8px 8px; background: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  .voice-hint { font-size: 12px; color: var(--text3); margin-bottom: 10px; line-height: 1.5; padding: 8px 10px; background: var(--bg2); border-radius: var(--radius); border-left: 3px solid var(--blue); border-top-left-radius: 0; border-bottom-left-radius: 0; }
+  .voice-status { font-size: 12px; color: var(--text2); margin-bottom: 8px; min-height: 18px; font-style: italic; }
+
+  /* Cal */
   .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
   .cal-nav span { font-size: 15px; font-weight: 500; }
   .cal-nav button { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 4px 13px; cursor: pointer; color: var(--text); font-size: 15px; }
@@ -98,26 +88,18 @@
   .day-panel { margin-top: 0.85rem; border-top: 0.5px solid var(--border); padding-top: 0.75rem; min-height: 64px; }
   .day-panel-title { font-size: 12px; color: var(--text2); margin-bottom: 7px; }
   .no-ev { font-size: 13px; color: var(--text3); text-align: center; padding: 10px 0; }
-
-  /* Event items */
   .ev { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: var(--radius); margin-bottom: 4px; background: var(--bg2); }
   .ev-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .ev-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .ev-client { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .ev-desc { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+  .ev-client { font-size: 13px; font-weight: 500; }
+  .ev-desc { font-size: 11px; color: var(--text2); }
   .ev-del { background: none; border: none; cursor: pointer; font-size: 16px; color: var(--text3); padding: 0 2px; line-height: 1; flex-shrink: 0; }
   .ev-del:hover { color: #A32D2D; }
-
-  /* Badges */
   .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; }
   .b-p { background: var(--amber-bg); color: var(--amber-text); }
   .b-a { background: var(--blue-bg); color: var(--blue-text); }
   .b-d { background: var(--green-bg); color: var(--green-text); }
-  .dot-p { background: #BA7517; }
-  .dot-a { background: #185FA5; }
-  .dot-d { background: #3B6D11; }
-
-  /* List */
+  .dot-p { background: #BA7517; } .dot-a { background: #185FA5; } .dot-d { background: #3B6D11; }
   .list-item { display: flex; align-items: flex-start; justify-content: space-between; padding: 10px 12px; border-radius: var(--radius); border: 0.5px solid var(--border); margin-bottom: 6px; background: var(--bg); transition: border-color 0.1s; }
   .list-item:hover { border-color: var(--border2); }
   .li-main { flex: 1; min-width: 0; }
@@ -126,8 +108,6 @@
   .li-desc { font-size: 12px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .li-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 10px; }
   .empty-list { font-size: 14px; color: var(--text3); text-align: center; padding: 2rem 0; }
-
-  /* Status filter */
   .filter-row { display: flex; gap: 6px; margin-bottom: 0.85rem; flex-wrap: wrap; }
   .filter-btn { font-size: 12px; padding: 4px 12px; border-radius: 99px; border: 0.5px solid var(--border2); background: none; cursor: pointer; color: var(--text2); transition: all 0.1s; }
   .filter-btn.active { background: var(--blue); color: #E6F1FB; border-color: var(--blue); }
@@ -151,6 +131,16 @@
     <div>
       <div class="card form-card" id="formCard" style="display:none;">
         <div class="sec-label">Nueva intervención</div>
+
+        <div class="voice-row">
+          <button class="mic-btn" id="micBtn">
+            <span class="mic-icon"></span>
+            <span id="micLabel">Dictar por voz</span>
+          </button>
+        </div>
+        <div class="voice-hint">Di algo como: <strong>"Cliente Juan García, revisión del compresor, el día 15 de mayo"</strong></div>
+        <div class="voice-status" id="voiceStatus"></div>
+
         <div class="form-row"><label>Cliente</label><input type="text" id="f-client" placeholder="Nombre del cliente"></div>
         <div class="form-row"><label>Descripción del problema</label><textarea id="f-desc" placeholder="Breve descripción..."></textarea></div>
         <div class="form-row"><label>Fecha</label><input type="date" id="f-date"></div>
@@ -193,6 +183,7 @@
 
 <script>
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const DAYS = ['L','M','X','J','V','S','D'];
 const STORAGE_KEY = 'intervenciones_v1';
 
@@ -210,6 +201,155 @@ function statusClass(st) { return st==='p'?'b-p':st==='a'?'b-a':'b-d'; }
 function statusLabel(st) { return st==='p'?'Pendiente':st==='a'?'En curso':'Completada'; }
 function dotClass(st) { return st==='p'?'dot-p':st==='a'?'dot-a':'dot-d'; }
 
+// --- VOICE ---
+function parseVoiceText(text) {
+  const result = { client: '', desc: '', date: '' };
+  const t = text.toLowerCase();
+
+  // Extract date
+  const dayNames = ['lunes','martes','miércoles','miercoles','jueves','viernes','sábado','sabado','domingo'];
+  const ordinals = ['primero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez',
+    'once','doce','trece','catorce','quince','dieciséis','dieciseis','diecisiete','dieciocho','diecinueve',
+    'veinte','veintiuno','veintidós','veintidos','veintitrés','veintitres','veinticuatro','veinticinco',
+    'veintiséis','veintiseis','veintisiete','veintiocho','veintinueve','treinta','treinta y uno'];
+  const ordinalMap = {primero:1,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,
+    once:11,doce:12,trece:13,catorce:14,quince:15,'dieciséis':16,dieciseis:16,diecisiete:17,dieciocho:18,
+    diecinueve:19,veinte:20,veintiuno:21,'veintidós':22,veintidos:22,'veintitrés':23,veintitres:23,
+    veinticuatro:24,veinticinco:25,'veintiséis':26,veintiseis:26,veintisiete:27,veintiocho:28,
+    veintinueve:29,treinta:30,'treinta y uno':31};
+
+  let foundDate = false;
+
+  // Pattern: "el día X de mes" or "para el X de mes" or "el X de mes"
+  const dateRe = /(?:el d[ií]a|para el|el)\s+(\d{1,2}|treinta y uno|treinta|veinti\w+|veinte|quince|catorce|trece|doce|once|diez|nueve|ocho|siete|seis|cinco|cuatro|tres|dos|uno|primero)\s+de\s+(\w+)/i;
+  const dateMatch = t.match(dateRe);
+  if (dateMatch) {
+    const dayRaw = dateMatch[1].trim();
+    const monthRaw = dateMatch[2].trim();
+    const dayNum = parseInt(dayRaw) || ordinalMap[dayRaw] || 0;
+    const monthIdx = MONTHS_ES.findIndex(m => monthRaw.startsWith(m.substring(0,4)));
+    if (dayNum > 0 && monthIdx >= 0) {
+      const yr = now.getFullYear();
+      const d = new Date(yr, monthIdx, dayNum);
+      if (d < now) d.setFullYear(yr + 1);
+      result.date = fmtDate(d);
+      foundDate = true;
+    }
+  }
+
+  // Pattern: numeric "el 15/5" or "15 de mayo"
+  if (!foundDate) {
+    const numDateRe = /(\d{1,2})[\/\-](\d{1,2})/;
+    const numMatch = t.match(numDateRe);
+    if (numMatch) {
+      const day = parseInt(numMatch[1]), month = parseInt(numMatch[2]) - 1;
+      if (day >= 1 && day <= 31 && month >= 0 && month <= 11) {
+        const d = new Date(now.getFullYear(), month, day);
+        if (d < now) d.setFullYear(now.getFullYear() + 1);
+        result.date = fmtDate(d);
+        foundDate = true;
+      }
+    }
+  }
+
+  // "mañana", "pasado mañana", "hoy"
+  if (!foundDate) {
+    if (t.includes('pasado mañana') || t.includes('pasado manana')) {
+      const d = new Date(); d.setDate(d.getDate()+2); result.date = fmtDate(d); foundDate = true;
+    } else if (t.includes('mañana') || t.includes('manana')) {
+      const d = new Date(); d.setDate(d.getDate()+1); result.date = fmtDate(d); foundDate = true;
+    } else if (t.includes('hoy')) {
+      result.date = todayStr(); foundDate = true;
+    }
+  }
+
+  // Remove date fragment from text for further parsing
+  let clean = text;
+  if (foundDate) {
+    clean = clean.replace(/(?:el d[ií]a|para el|el)\s+[\w\s]+de\s+\w+/i, '').replace(/\d{1,2}[\/\-]\d{1,2}/,'').replace(/(?:mañana|manana|pasado mañana|pasado manana|hoy)/i,'').trim();
+  }
+
+  // Extract client: after "cliente" keyword
+  const clientRe = /cliente\s+([^,\.]+)/i;
+  const clientMatch = clean.match(clientRe);
+  if (clientMatch) {
+    result.client = clientMatch[1].trim();
+    clean = clean.replace(clientRe, '').trim();
+  }
+
+  // Remaining text (after removing client/date markers) = description
+  let desc = clean
+    .replace(/^[,\.\s]+/, '')
+    .replace(/,?\s*(el d[ií]a|para el|el d[ií]a|mañana|hoy)\s*/i, '')
+    .replace(/,\s*$/, '')
+    .trim();
+
+  // Remove leading/trailing commas and connectors
+  desc = desc.replace(/^[,\s\-]+|[,\s\-]+$/g, '').trim();
+  if (desc.length > 3) result.desc = desc.charAt(0).toUpperCase() + desc.slice(1);
+
+  return result;
+}
+
+let recognition = null;
+let isListening = false;
+
+function setupVoice() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById('micBtn').style.display = 'none';
+    document.querySelector('.voice-hint').style.display = 'none';
+    return;
+  }
+  recognition = new SpeechRecognition();
+  recognition.lang = 'es-ES';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById('micBtn').classList.add('listening');
+    document.getElementById('micLabel').textContent = 'Escuchando...';
+    document.getElementById('voiceStatus').textContent = 'Habla ahora...';
+  };
+
+  recognition.onresult = (e) => {
+    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+    document.getElementById('voiceStatus').textContent = '"' + transcript + '"';
+    if (e.results[e.results.length - 1].isFinal) {
+      const parsed = parseVoiceText(transcript);
+      if (parsed.client) document.getElementById('f-client').value = parsed.client;
+      if (parsed.desc) document.getElementById('f-desc').value = parsed.desc;
+      if (parsed.date) document.getElementById('f-date').value = parsed.date;
+      document.getElementById('voiceStatus').textContent = 'Campos rellenados. Revisa y guarda.';
+    }
+  };
+
+  recognition.onerror = (e) => {
+    document.getElementById('voiceStatus').textContent = 'No se pudo escuchar. Inténtalo de nuevo.';
+    stopListening();
+  };
+
+  recognition.onend = () => { stopListening(); };
+}
+
+function stopListening() {
+  isListening = false;
+  document.getElementById('micBtn').classList.remove('listening');
+  document.getElementById('micLabel').textContent = 'Dictar por voz';
+}
+
+document.getElementById('micBtn').onclick = function() {
+  if (!recognition) return;
+  if (isListening) { recognition.stop(); return; }
+  document.getElementById('f-client').value = '';
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-date').value = '';
+  document.getElementById('voiceStatus').textContent = '';
+  recognition.start();
+};
+
+// --- CALENDAR ---
 function buildCal() {
   const grid = document.getElementById('calGrid');
   grid.innerHTML = '';
@@ -328,6 +468,7 @@ document.querySelectorAll('.filter-btn').forEach(btn=>{
   };
 });
 
+setupVoice();
 renderAll();
 </script>
 </body>
