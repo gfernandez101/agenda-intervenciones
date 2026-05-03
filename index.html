@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda de intervenciones</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff;
+    --bg2: #f5f5f3;
+    --bg3: #ededea;
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9e9e99;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --blue-bg: #E6F1FB;
+    --blue-text: #0C447C;
+    --blue: #185FA5;
+    --blue-dark: #0C447C;
+    --amber-bg: #FAEEDA;
+    --amber-text: #854F0B;
+    --green-bg: #EAF3DE;
+    --green-text: #3B6D11;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c;
+      --bg2: #2a2a28;
+      --bg3: #333330;
+      --text: #f0ede8;
+      --text2: #a8a8a2;
+      --text3: #6b6b65;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --blue-bg: #0C447C;
+      --blue-text: #B5D4F4;
+      --blue: #378ADD;
+      --blue-dark: #85B7EB;
+      --amber-bg: #633806;
+      --amber-text: #FAC775;
+      --green-bg: #27500A;
+      --green-text: #C0DD97;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg2); color: var(--text); min-height: 100vh; }
+  .app { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  header h1 { font-size: 20px; font-weight: 600; }
+  .btn-primary { background: var(--blue); color: #E6F1FB; border: none; border-radius: var(--radius); padding: 8px 18px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+  .btn-primary:hover { background: var(--blue-dark); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+  .stat { background: var(--bg); border-radius: var(--radius); padding: 0.85rem 1rem; text-align: center; border: 0.5px solid var(--border); }
+  .stat-n { font-size: 26px; font-weight: 600; }
+  .stat-l { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .n-total { color: var(--text); }
+  .n-pend { color: #BA7517; }
+  .n-done { color: #3B6D11; }
+
+  .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+  @media (max-width: 600px) { .layout { grid-template-columns: 1fr; } }
+
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.25rem; }
+  .sec-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.85rem; }
+
+  /* Form */
+  .form-card { margin-bottom: 1rem; }
+  .form-row { margin-bottom: 10px; }
+  .form-row label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%; font-size: 14px; padding: 7px 10px;
+    border: 0.5px solid var(--border2); border-radius: var(--radius);
+    background: var(--bg2); color: var(--text); outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: var(--blue); }
+  .form-row textarea { height: 60px; resize: vertical; }
+  .save-btn { width: 100%; background: var(--blue); color: #E6F1FB; border: none; border-radius: var(--radius); padding: 9px; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 4px; }
+  .save-btn:hover { background: var(--blue-dark); }
+
+  /* Calendar */
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+  .cal-nav span { font-size: 15px; font-weight: 500; }
+  .cal-nav button { background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 4px 13px; cursor: pointer; color: var(--text); font-size: 15px; }
+  .cal-nav button:hover { background: var(--bg2); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .dow { font-size: 10px; color: var(--text3); text-align: center; padding-bottom: 6px; }
+  .day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text); position: relative; transition: background 0.1s; }
+  .day:hover { background: var(--bg2); }
+  .day.other { color: var(--text3); }
+  .day.today { background: var(--blue-bg); color: var(--blue-text); font-weight: 600; }
+  .day.sel { background: var(--blue); color: #E6F1FB; font-weight: 600; }
+  .day.has-ev::after { content: ''; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: #D85A30; }
+  .day.sel.has-ev::after { background: #B5D4F4; }
+  .day-panel { margin-top: 0.85rem; border-top: 0.5px solid var(--border); padding-top: 0.75rem; min-height: 64px; }
+  .day-panel-title { font-size: 12px; color: var(--text2); margin-bottom: 7px; }
+  .no-ev { font-size: 13px; color: var(--text3); text-align: center; padding: 10px 0; }
+
+  /* Event items */
+  .ev { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: var(--radius); margin-bottom: 4px; background: var(--bg2); }
+  .ev-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .ev-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .ev-client { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ev-desc { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+  .ev-del { background: none; border: none; cursor: pointer; font-size: 16px; color: var(--text3); padding: 0 2px; line-height: 1; flex-shrink: 0; }
+  .ev-del:hover { color: #A32D2D; }
+
+  /* Badges */
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; }
+  .b-p { background: var(--amber-bg); color: var(--amber-text); }
+  .b-a { background: var(--blue-bg); color: var(--blue-text); }
+  .b-d { background: var(--green-bg); color: var(--green-text); }
+  .dot-p { background: #BA7517; }
+  .dot-a { background: #185FA5; }
+  .dot-d { background: #3B6D11; }
+
+  /* List */
+  .list-item { display: flex; align-items: flex-start; justify-content: space-between; padding: 10px 12px; border-radius: var(--radius); border: 0.5px solid var(--border); margin-bottom: 6px; background: var(--bg); transition: border-color 0.1s; }
+  .list-item:hover { border-color: var(--border2); }
+  .li-main { flex: 1; min-width: 0; }
+  .li-client { font-size: 14px; font-weight: 500; }
+  .li-date { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .li-desc { font-size: 12px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .li-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 10px; }
+  .empty-list { font-size: 14px; color: var(--text3); text-align: center; padding: 2rem 0; }
+
+  /* Status filter */
+  .filter-row { display: flex; gap: 6px; margin-bottom: 0.85rem; flex-wrap: wrap; }
+  .filter-btn { font-size: 12px; padding: 4px 12px; border-radius: 99px; border: 0.5px solid var(--border2); background: none; cursor: pointer; color: var(--text2); transition: all 0.1s; }
+  .filter-btn.active { background: var(--blue); color: #E6F1FB; border-color: var(--blue); }
+  .filter-btn:hover:not(.active) { background: var(--bg2); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Agenda de intervenciones</h1>
+    <button class="btn-primary" id="toggleForm">+ Nueva</button>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-n n-total" id="s-total">0</div><div class="stat-l">Total</div></div>
+    <div class="stat"><div class="stat-n n-pend" id="s-pend">0</div><div class="stat-l">Pendientes</div></div>
+    <div class="stat"><div class="stat-n n-done" id="s-done">0</div><div class="stat-l">Completadas</div></div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="card form-card" id="formCard" style="display:none;">
+        <div class="sec-label">Nueva intervención</div>
+        <div class="form-row"><label>Cliente</label><input type="text" id="f-client" placeholder="Nombre del cliente"></div>
+        <div class="form-row"><label>Descripción del problema</label><textarea id="f-desc" placeholder="Breve descripción..."></textarea></div>
+        <div class="form-row"><label>Fecha</label><input type="date" id="f-date"></div>
+        <div class="form-row"><label>Estado</label>
+          <select id="f-status">
+            <option value="p">Pendiente</option>
+            <option value="a">En curso</option>
+            <option value="d">Completada</option>
+          </select>
+        </div>
+        <button class="save-btn" id="saveBtn">Guardar intervención</button>
+      </div>
+
+      <div class="card">
+        <div class="cal-nav">
+          <button id="prevM">&#8249;</button>
+          <span id="calTitle"></span>
+          <button id="nextM">&#8250;</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="day-panel">
+          <div class="day-panel-title" id="selDateLabel">Selecciona un día para ver intervenciones</div>
+          <div id="dayEvents"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-label">Todas las intervenciones</div>
+      <div class="filter-row">
+        <button class="filter-btn active" data-filter="all">Todas</button>
+        <button class="filter-btn" data-filter="p">Pendientes</button>
+        <button class="filter-btn" data-filter="a">En curso</button>
+        <button class="filter-btn" data-filter="d">Completadas</button>
+      </div>
+      <div id="allList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS = ['L','M','X','J','V','S','D'];
+const STORAGE_KEY = 'intervenciones_v1';
+
+let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let selDate = null;
+let activeFilter = 'all';
+const now = new Date();
+let viewYear = now.getFullYear(), viewMonth = now.getMonth();
+
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
+function todayStr() { return fmtDate(new Date()); }
+function fmtDate(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function labelDate(s) { if(!s) return ''; const [y,m,d]=s.split('-'); return d+'/'+m+'/'+y; }
+function statusClass(st) { return st==='p'?'b-p':st==='a'?'b-a':'b-d'; }
+function statusLabel(st) { return st==='p'?'Pendiente':st==='a'?'En curso':'Completada'; }
+function dotClass(st) { return st==='p'?'dot-p':st==='a'?'dot-a':'dot-d'; }
+
+function buildCal() {
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  DAYS.forEach(d => { const el=document.createElement('div'); el.className='dow'; el.textContent=d; grid.appendChild(el); });
+  const first = new Date(viewYear, viewMonth, 1);
+  const startDow = (first.getDay()+6)%7;
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+  const prevDays = new Date(viewYear, viewMonth, 0).getDate();
+  const todS = todayStr();
+  for (let i=0; i<startDow; i++) {
+    const el=document.createElement('div'); el.className='day other';
+    el.textContent=prevDays-startDow+1+i; grid.appendChild(el);
+  }
+  for (let d=1; d<=daysInMonth; d++) {
+    const el=document.createElement('div'); el.className='day';
+    const ds=viewYear+'-'+String(viewMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    el.textContent=d;
+    if(ds===todS) el.classList.add('today');
+    if(ds===selDate) el.classList.add('sel');
+    if(records.some(r=>r.date===ds)) el.classList.add('has-ev');
+    el.onclick=()=>{ selDate=ds; buildCal(); renderDayPanel(); };
+    grid.appendChild(el);
+  }
+  document.getElementById('calTitle').textContent=MONTHS[viewMonth]+' '+viewYear;
+}
+
+function renderDayPanel() {
+  const lbl=document.getElementById('selDateLabel');
+  const box=document.getElementById('dayEvents');
+  if(!selDate){lbl.textContent='Selecciona un día para ver intervenciones';box.innerHTML='';return;}
+  const evs=records.filter(r=>r.date===selDate);
+  lbl.textContent=labelDate(selDate)+(evs.length?' — '+evs.length+' intervención'+(evs.length>1?'es':''):'');
+  if(!evs.length){box.innerHTML='<div class="no-ev">Sin intervenciones este día</div>';return;}
+  box.innerHTML=evs.map(r=>`
+    <div class="ev">
+      <div class="ev-left">
+        <div class="ev-dot ${dotClass(r.status)}"></div>
+        <div>
+          <div class="ev-client">${r.client}</div>
+          ${r.desc?`<div class="ev-desc">${r.desc}</div>`:''}
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="badge ${statusClass(r.status)}">${statusLabel(r.status)}</span>
+        <button class="ev-del" onclick="deleteRecord('${r.id}')">×</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderList() {
+  const box=document.getElementById('allList');
+  let filtered=records.filter(r=>activeFilter==='all'||r.status===activeFilter);
+  const sorted=[...filtered].sort((a,b)=>a.date.localeCompare(b.date));
+  if(!sorted.length){box.innerHTML='<div class="empty-list">Sin intervenciones</div>';return;}
+  box.innerHTML=sorted.map(r=>`
+    <div class="list-item">
+      <div class="li-main">
+        <div class="li-client">${r.client}</div>
+        <div class="li-date">${labelDate(r.date)}</div>
+        ${r.desc?`<div class="li-desc">${r.desc}</div>`:''}
+      </div>
+      <div class="li-right">
+        <span class="badge ${statusClass(r.status)}">${statusLabel(r.status)}</span>
+        <button class="ev-del" onclick="deleteRecord('${r.id}')">×</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderStats() {
+  document.getElementById('s-total').textContent=records.length;
+  document.getElementById('s-pend').textContent=records.filter(r=>r.status==='p').length;
+  document.getElementById('s-done').textContent=records.filter(r=>r.status==='d').length;
+}
+
+function deleteRecord(id) {
+  records=records.filter(r=>r.id!==id);
+  save(); buildCal(); renderDayPanel(); renderList(); renderStats();
+}
+
+function renderAll() { buildCal(); renderDayPanel(); renderList(); renderStats(); }
+
+document.getElementById('toggleForm').onclick=function(){
+  const fc=document.getElementById('formCard');
+  const showing=fc.style.display!=='none';
+  fc.style.display=showing?'none':'block';
+  this.textContent=showing?'+ Nueva':'× Cerrar';
+  if(!showing) document.getElementById('f-date').value=selDate||todayStr();
+};
+
+document.getElementById('saveBtn').onclick=function(){
+  const client=document.getElementById('f-client').value.trim();
+  const desc=document.getElementById('f-desc').value.trim();
+  const date=document.getElementById('f-date').value;
+  const status=document.getElementById('f-status').value;
+  if(!client||!date){alert('Indica el cliente y la fecha.');return;}
+  records.push({id:Date.now()+'',client,desc,date,status});
+  save();
+  document.getElementById('f-client').value='';
+  document.getElementById('f-desc').value='';
+  document.getElementById('f-date').value='';
+  document.getElementById('f-status').value='p';
+  document.getElementById('formCard').style.display='none';
+  document.getElementById('toggleForm').textContent='+ Nueva';
+  selDate=date; renderAll();
+};
+
+document.getElementById('prevM').onclick=function(){viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--;}buildCal();};
+document.getElementById('nextM').onclick=function(){viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++;}buildCal();};
+
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.onclick=function(){
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    activeFilter=this.dataset.filter;
+    renderList();
+  };
+});
+
+renderAll();
+</script>
+</body>
+</html>
