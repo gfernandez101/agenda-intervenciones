@@ -55,6 +55,13 @@
   .save-btn { width: 100%; background: var(--blue); color: #E6F1FB; border: none; border-radius: var(--radius); padding: 9px; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 4px; }
   .save-btn:hover { background: var(--blue-dark); }
 
+  /* Sync status */
+  .sync-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text3); margin-bottom: 1rem; padding: 6px 10px; background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: #9e9e99; flex-shrink: 0; }
+  .sync-dot.ok { background: #3B6D11; }
+  .sync-dot.error { background: #A32D2D; }
+  .sync-dot.loading { background: #BA7517; animation: pulse 1s infinite; }
+
   /* Voz */
   .voice-row { display: flex; gap: 8px; margin-bottom: 12px; }
   .mic-btn {
@@ -121,6 +128,11 @@
     <button class="btn-primary" id="toggleForm">+ Nueva</button>
   </header>
 
+  <div class="sync-bar">
+    <div class="sync-dot loading" id="syncDot"></div>
+    <span id="syncLabel">Conectando con la nube...</span>
+  </div>
+
   <div class="stats">
     <div class="stat"><div class="stat-n n-total" id="s-total">0</div><div class="stat-l">Total</div></div>
     <div class="stat"><div class="stat-n n-pend" id="s-pend">0</div><div class="stat-l">Pendientes</div></div>
@@ -131,7 +143,6 @@
     <div>
       <div class="card form-card" id="formCard" style="display:none;">
         <div class="sec-label">Nueva intervención</div>
-
         <div class="voice-row">
           <button class="mic-btn" id="micBtn">
             <span class="mic-icon"></span>
@@ -140,7 +151,6 @@
         </div>
         <div class="voice-hint">Di algo como: <strong>"Cliente Juan García, revisión del compresor, el día 15 de mayo"</strong></div>
         <div class="voice-status" id="voiceStatus"></div>
-
         <div class="form-row"><label>Cliente</label><input type="text" id="f-client" placeholder="Nombre del cliente"></div>
         <div class="form-row"><label>Descripción del problema</label><textarea id="f-desc" placeholder="Breve descripción..."></textarea></div>
         <div class="form-row"><label>Fecha</label><input type="date" id="f-date"></div>
@@ -181,19 +191,34 @@
   </div>
 </div>
 
-<script>
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBNxhynAHI_lOpAbOSMWra6rx2837tugWg",
+  authDomain: "agenda-intervenciones.firebaseapp.com",
+  projectId: "agenda-intervenciones",
+  storageBucket: "agenda-intervenciones.firebasestorage.app",
+  messagingSenderId: "396676106755",
+  appId: "1:396676106755:web:e7cf70c5de2e4566af5c36",
+  measurementId: "G-96ZDHV9K3M"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const DAYS = ['L','M','X','J','V','S','D'];
-const STORAGE_KEY = 'intervenciones_v1';
 
-let records = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let records = [];
 let selDate = null;
 let activeFilter = 'all';
 const now = new Date();
 let viewYear = now.getFullYear(), viewMonth = now.getMonth();
 
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); }
 function todayStr() { return fmtDate(new Date()); }
 function fmtDate(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function labelDate(s) { if(!s) return ''; const [y,m,d]=s.split('-'); return d+'/'+m+'/'+y; }
@@ -201,17 +226,47 @@ function statusClass(st) { return st==='p'?'b-p':st==='a'?'b-a':'b-d'; }
 function statusLabel(st) { return st==='p'?'Pendiente':st==='a'?'En curso':'Completada'; }
 function dotClass(st) { return st==='p'?'dot-p':st==='a'?'dot-a':'dot-d'; }
 
-// --- VOICE ---
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  dot.className = 'sync-dot ' + state;
+  lbl.textContent = msg;
+}
+
+// Escucha en tiempo real Firestore
+const q = query(collection(db, 'intervenciones'), orderBy('date'));
+onSnapshot(q, (snapshot) => {
+  records = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  setSyncStatus('ok', 'Sincronizado con la nube ✓');
+  renderAll();
+}, (error) => {
+  setSyncStatus('error', 'Error de conexión — ' + error.message);
+});
+
+async function addRecord(data) {
+  setSyncStatus('loading', 'Guardando...');
+  try {
+    await addDoc(collection(db, 'intervenciones'), data);
+  } catch(e) {
+    setSyncStatus('error', 'Error al guardar: ' + e.message);
+  }
+}
+
+async function deleteRecord(id) {
+  setSyncStatus('loading', 'Eliminando...');
+  try {
+    await deleteDoc(doc(db, 'intervenciones', id));
+  } catch(e) {
+    setSyncStatus('error', 'Error al eliminar: ' + e.message);
+  }
+}
+
+window.deleteRecord = deleteRecord;
+
+// --- VOZ ---
 function parseVoiceText(text) {
   const result = { client: '', desc: '', date: '' };
   const t = text.toLowerCase();
-
-  // Extract date
-  const dayNames = ['lunes','martes','miércoles','miercoles','jueves','viernes','sábado','sabado','domingo'];
-  const ordinals = ['primero','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez',
-    'once','doce','trece','catorce','quince','dieciséis','dieciseis','diecisiete','dieciocho','diecinueve',
-    'veinte','veintiuno','veintidós','veintidos','veintitrés','veintitres','veinticuatro','veinticinco',
-    'veintiséis','veintiseis','veintisiete','veintiocho','veintinueve','treinta','treinta y uno'];
   const ordinalMap = {primero:1,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,
     once:11,doce:12,trece:13,catorce:14,quince:15,'dieciséis':16,dieciseis:16,diecisiete:17,dieciocho:18,
     diecinueve:19,veinte:20,veintiuno:21,'veintidós':22,veintidos:22,'veintitrés':23,veintitres:23,
@@ -219,8 +274,6 @@ function parseVoiceText(text) {
     veintinueve:29,treinta:30,'treinta y uno':31};
 
   let foundDate = false;
-
-  // Pattern: "el día X de mes" or "para el X de mes" or "el X de mes"
   const dateRe = /(?:el d[ií]a|para el|el)\s+(\d{1,2}|treinta y uno|treinta|veinti\w+|veinte|quince|catorce|trece|doce|once|diez|nueve|ocho|siete|seis|cinco|cuatro|tres|dos|uno|primero)\s+de\s+(\w+)/i;
   const dateMatch = t.match(dateRe);
   if (dateMatch) {
@@ -232,62 +285,22 @@ function parseVoiceText(text) {
       const yr = now.getFullYear();
       const d = new Date(yr, monthIdx, dayNum);
       if (d < now) d.setFullYear(yr + 1);
-      result.date = fmtDate(d);
-      foundDate = true;
+      result.date = fmtDate(d); foundDate = true;
     }
   }
-
-  // Pattern: numeric "el 15/5" or "15 de mayo"
   if (!foundDate) {
-    const numDateRe = /(\d{1,2})[\/\-](\d{1,2})/;
-    const numMatch = t.match(numDateRe);
-    if (numMatch) {
-      const day = parseInt(numMatch[1]), month = parseInt(numMatch[2]) - 1;
-      if (day >= 1 && day <= 31 && month >= 0 && month <= 11) {
-        const d = new Date(now.getFullYear(), month, day);
-        if (d < now) d.setFullYear(now.getFullYear() + 1);
-        result.date = fmtDate(d);
-        foundDate = true;
-      }
-    }
+    if (t.includes('pasado mañana')||t.includes('pasado manana')) { const d=new Date(); d.setDate(d.getDate()+2); result.date=fmtDate(d); foundDate=true; }
+    else if (t.includes('mañana')||t.includes('manana')) { const d=new Date(); d.setDate(d.getDate()+1); result.date=fmtDate(d); foundDate=true; }
+    else if (t.includes('hoy')) { result.date=todayStr(); foundDate=true; }
   }
-
-  // "mañana", "pasado mañana", "hoy"
-  if (!foundDate) {
-    if (t.includes('pasado mañana') || t.includes('pasado manana')) {
-      const d = new Date(); d.setDate(d.getDate()+2); result.date = fmtDate(d); foundDate = true;
-    } else if (t.includes('mañana') || t.includes('manana')) {
-      const d = new Date(); d.setDate(d.getDate()+1); result.date = fmtDate(d); foundDate = true;
-    } else if (t.includes('hoy')) {
-      result.date = todayStr(); foundDate = true;
-    }
-  }
-
-  // Remove date fragment from text for further parsing
   let clean = text;
-  if (foundDate) {
-    clean = clean.replace(/(?:el d[ií]a|para el|el)\s+[\w\s]+de\s+\w+/i, '').replace(/\d{1,2}[\/\-]\d{1,2}/,'').replace(/(?:mañana|manana|pasado mañana|pasado manana|hoy)/i,'').trim();
-  }
-
-  // Extract client: after "cliente" keyword
+  if (foundDate) clean = clean.replace(/(?:el d[ií]a|para el|el)\s+[\w\s]+de\s+\w+/i,'').replace(/(?:mañana|manana|pasado mañana|pasado manana|hoy)/i,'').trim();
   const clientRe = /cliente\s+([^,\.]+)/i;
   const clientMatch = clean.match(clientRe);
-  if (clientMatch) {
-    result.client = clientMatch[1].trim();
-    clean = clean.replace(clientRe, '').trim();
-  }
-
-  // Remaining text (after removing client/date markers) = description
-  let desc = clean
-    .replace(/^[,\.\s]+/, '')
-    .replace(/,?\s*(el d[ií]a|para el|el d[ií]a|mañana|hoy)\s*/i, '')
-    .replace(/,\s*$/, '')
-    .trim();
-
-  // Remove leading/trailing commas and connectors
-  desc = desc.replace(/^[,\s\-]+|[,\s\-]+$/g, '').trim();
+  if (clientMatch) { result.client = clientMatch[1].trim(); clean = clean.replace(clientRe,'').trim(); }
+  let desc = clean.replace(/^[,\.\s]+/,'').replace(/,?\s*(el d[ií]a|para el|mañana|hoy)\s*/i,'').replace(/,\s*$/,'').trim();
+  desc = desc.replace(/^[,\s\-]+|[,\s\-]+$/g,'').trim();
   if (desc.length > 3) result.desc = desc.charAt(0).toUpperCase() + desc.slice(1);
-
   return result;
 }
 
@@ -295,61 +308,36 @@ let recognition = null;
 let isListening = false;
 
 function setupVoice() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    document.getElementById('micBtn').style.display = 'none';
-    document.querySelector('.voice-hint').style.display = 'none';
-    return;
-  }
-  recognition = new SpeechRecognition();
-  recognition.lang = 'es-ES';
-  recognition.continuous = false;
-  recognition.interimResults = true;
-
-  recognition.onstart = () => {
-    isListening = true;
-    document.getElementById('micBtn').classList.add('listening');
-    document.getElementById('micLabel').textContent = 'Escuchando...';
-    document.getElementById('voiceStatus').textContent = 'Habla ahora...';
-  };
-
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { document.getElementById('micBtn').style.display='none'; document.querySelector('.voice-hint').style.display='none'; return; }
+  recognition = new SR();
+  recognition.lang = 'es-ES'; recognition.continuous = false; recognition.interimResults = true;
+  recognition.onstart = () => { isListening=true; document.getElementById('micBtn').classList.add('listening'); document.getElementById('micLabel').textContent='Escuchando...'; document.getElementById('voiceStatus').textContent='Habla ahora...'; };
   recognition.onresult = (e) => {
-    const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
-    document.getElementById('voiceStatus').textContent = '"' + transcript + '"';
-    if (e.results[e.results.length - 1].isFinal) {
+    const transcript = Array.from(e.results).map(r=>r[0].transcript).join('');
+    document.getElementById('voiceStatus').textContent='"'+transcript+'"';
+    if (e.results[e.results.length-1].isFinal) {
       const parsed = parseVoiceText(transcript);
-      if (parsed.client) document.getElementById('f-client').value = parsed.client;
-      if (parsed.desc) document.getElementById('f-desc').value = parsed.desc;
-      if (parsed.date) document.getElementById('f-date').value = parsed.date;
-      document.getElementById('voiceStatus').textContent = 'Campos rellenados. Revisa y guarda.';
+      if (parsed.client) document.getElementById('f-client').value=parsed.client;
+      if (parsed.desc) document.getElementById('f-desc').value=parsed.desc;
+      if (parsed.date) document.getElementById('f-date').value=parsed.date;
+      document.getElementById('voiceStatus').textContent='Campos rellenados. Revisa y guarda.';
     }
   };
-
-  recognition.onerror = (e) => {
-    document.getElementById('voiceStatus').textContent = 'No se pudo escuchar. Inténtalo de nuevo.';
-    stopListening();
-  };
-
+  recognition.onerror = () => { document.getElementById('voiceStatus').textContent='No se pudo escuchar. Inténtalo de nuevo.'; stopListening(); };
   recognition.onend = () => { stopListening(); };
 }
 
-function stopListening() {
-  isListening = false;
-  document.getElementById('micBtn').classList.remove('listening');
-  document.getElementById('micLabel').textContent = 'Dictar por voz';
-}
+function stopListening() { isListening=false; document.getElementById('micBtn').classList.remove('listening'); document.getElementById('micLabel').textContent='Dictar por voz'; }
 
 document.getElementById('micBtn').onclick = function() {
   if (!recognition) return;
   if (isListening) { recognition.stop(); return; }
-  document.getElementById('f-client').value = '';
-  document.getElementById('f-desc').value = '';
-  document.getElementById('f-date').value = '';
-  document.getElementById('voiceStatus').textContent = '';
+  document.getElementById('f-client').value=''; document.getElementById('f-desc').value=''; document.getElementById('f-date').value=''; document.getElementById('voiceStatus').textContent='';
   recognition.start();
 };
 
-// --- CALENDAR ---
+// --- CALENDARIO ---
 function buildCal() {
   const grid = document.getElementById('calGrid');
   grid.innerHTML = '';
@@ -359,10 +347,7 @@ function buildCal() {
   const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
   const prevDays = new Date(viewYear, viewMonth, 0).getDate();
   const todS = todayStr();
-  for (let i=0; i<startDow; i++) {
-    const el=document.createElement('div'); el.className='day other';
-    el.textContent=prevDays-startDow+1+i; grid.appendChild(el);
-  }
+  for (let i=0; i<startDow; i++) { const el=document.createElement('div'); el.className='day other'; el.textContent=prevDays-startDow+1+i; grid.appendChild(el); }
   for (let d=1; d<=daysInMonth; d++) {
     const el=document.createElement('div'); el.className='day';
     const ds=viewYear+'-'+String(viewMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
@@ -387,10 +372,7 @@ function renderDayPanel() {
     <div class="ev">
       <div class="ev-left">
         <div class="ev-dot ${dotClass(r.status)}"></div>
-        <div>
-          <div class="ev-client">${r.client}</div>
-          ${r.desc?`<div class="ev-desc">${r.desc}</div>`:''}
-        </div>
+        <div><div class="ev-client">${r.client}</div>${r.desc?`<div class="ev-desc">${r.desc}</div>`:''}</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
         <span class="badge ${statusClass(r.status)}">${statusLabel(r.status)}</span>
@@ -424,11 +406,6 @@ function renderStats() {
   document.getElementById('s-done').textContent=records.filter(r=>r.status==='d').length;
 }
 
-function deleteRecord(id) {
-  records=records.filter(r=>r.id!==id);
-  save(); buildCal(); renderDayPanel(); renderList(); renderStats();
-}
-
 function renderAll() { buildCal(); renderDayPanel(); renderList(); renderStats(); }
 
 document.getElementById('toggleForm').onclick=function(){
@@ -439,21 +416,20 @@ document.getElementById('toggleForm').onclick=function(){
   if(!showing) document.getElementById('f-date').value=selDate||todayStr();
 };
 
-document.getElementById('saveBtn').onclick=function(){
+document.getElementById('saveBtn').onclick=async function(){
   const client=document.getElementById('f-client').value.trim();
   const desc=document.getElementById('f-desc').value.trim();
   const date=document.getElementById('f-date').value;
   const status=document.getElementById('f-status').value;
   if(!client||!date){alert('Indica el cliente y la fecha.');return;}
-  records.push({id:Date.now()+'',client,desc,date,status});
-  save();
+  await addRecord({ client, desc, date, status });
   document.getElementById('f-client').value='';
   document.getElementById('f-desc').value='';
   document.getElementById('f-date').value='';
   document.getElementById('f-status').value='p';
   document.getElementById('formCard').style.display='none';
   document.getElementById('toggleForm').textContent='+ Nueva';
-  selDate=date; renderAll();
+  selDate=date;
 };
 
 document.getElementById('prevM').onclick=function(){viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--;}buildCal();};
